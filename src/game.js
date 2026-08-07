@@ -302,7 +302,8 @@ function updateScoreWidget(widget, score) {
 
 function queueGameAssets(scene) {
   scene.load.image("factory-background", "assets/images/factory-background.png");
-  scene.load.image("cover-panel", "assets/images/cover-panel.png");
+  scene.load.image("cover-title", "assets/images/cover-title.png");
+  scene.load.image("cover-start", "assets/images/cover-start.png");
   scene.load.image("instruction-sign-blank", "assets/images/instruction-sign-blank.png");
   scene.load.image("instruction-sign-text", "assets/images/instruction-sign-text.png");
   scene.load.image("result-panel-empty", "assets/images/result-panel-empty-green.png");
@@ -376,6 +377,10 @@ class LoadingScene extends Phaser.Scene {
   }
 
   create() {
+    this.textures.get("cover-title").add("trimmed", 0, 127, 136, 939, 659);
+    this.textures.get("cover-start").add("trimmed", 0, 175, 153, 1571, 382);
+    this.textures.get("instruction-sign-text").add("trimmed", 0, 69, 285, 1784, 437);
+    this.textures.get("result-panel-empty").add("trimmed", 0, 448, 0, 938, 821);
     const openCover = () => this.scene.start("cover");
     if (document.fonts?.ready) {
       document.fonts.ready.then(openCover, openCover);
@@ -413,49 +418,47 @@ class CoverScene extends Phaser.Scene {
     glassLayer.postFX.addBlur(1, 2, 2, 0.8, 0xffffff, 2);
     this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0xf3f8ff, 0.11);
 
-    this.add.image(LAYOUT.header.x, LAYOUT.header.y, "instruction-sign-blank")
-      .setDisplaySize(LAYOUT.header.width, LAYOUT.header.height);
-    makeText(this, LAYOUT.header.x, LAYOUT.header.y + (IS_MOBILE_PORTRAIT ? 17 : 15), "التَّدْرِيبُ التَّفَاعُلِي", IS_MOBILE_PORTRAIT ? 39 : 36, {
-      color: "#17205c",
-      kufi: true,
-      stroke: "#fff2c7",
-      strokeThickness: 2,
-    });
-    const coverPanel = this.add.image(
+    const coverTitle = this.add.image(
       WIDTH / 2,
-      IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.42) : 330,
-      "cover-panel",
-    ).setDisplaySize(IS_MOBILE_PORTRAIT ? 650 : 713, IS_MOBILE_PORTRAIT ? 346 : 380);
-    const panelScaleX = coverPanel.scaleX;
-    const panelScaleY = coverPanel.scaleY;
-    const startZone = this.add.zone(
+      IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.32) : 280,
+      "cover-title",
+      "trimmed",
+    );
+    const coverTitleWidth = IS_MOBILE_PORTRAIT ? 465 : 390;
+    coverTitle.setScale(coverTitleWidth / coverTitle.width);
+    const startButton = this.add.image(
       WIDTH / 2,
-      IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.42) + 54 : 389,
-      IS_MOBILE_PORTRAIT ? 250 : 203,
-      IS_MOBILE_PORTRAIT ? 76 : 54,
-    ).setInteractive();
-    startZone.on("pointerover", () => this.tweens.add({
-      targets: coverPanel,
-      scaleX: panelScaleX * 1.2,
-      scaleY: panelScaleY * 1.2,
+      IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.56) : 525,
+      "cover-start",
+      "trimmed",
+    );
+    const startButtonWidth = IS_MOBILE_PORTRAIT ? 300 : 258;
+    startButton.setScale(startButtonWidth / startButton.width)
+      .setInteractive({ pixelPerfect: true, alphaTolerance: 16 });
+    const buttonScaleX = startButton.scaleX;
+    const buttonScaleY = startButton.scaleY;
+    startButton.on("pointerover", () => this.tweens.add({
+      targets: startButton,
+      scaleX: buttonScaleX * 1.035,
+      scaleY: buttonScaleY * 1.035,
       duration: 130,
       ease: "Sine.easeOut",
     }));
-    startZone.on("pointerout", () => this.tweens.add({
-      targets: coverPanel,
-      scaleX: panelScaleX,
-      scaleY: panelScaleY,
+    startButton.on("pointerout", () => this.tweens.add({
+      targets: startButton,
+      scaleX: buttonScaleX,
+      scaleY: buttonScaleY,
       duration: 130,
       ease: "Sine.easeOut",
     }));
-    startZone.on("pointerdown", () => {
+    startButton.on("pointerdown", () => {
       if (IS_MOBILE_PORTRAIT && document.fullscreenEnabled && !document.fullscreenElement) {
         document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
       }
       this.tweens.add({
-        targets: coverPanel,
-        scaleX: panelScaleX * 0.96,
-        scaleY: panelScaleY * 0.96,
+        targets: startButton,
+        scaleX: buttonScaleX * 0.96,
+        scaleY: buttonScaleY * 0.96,
         yoyo: true,
         duration: 80,
         ease: "Quad.easeInOut",
@@ -482,8 +485,9 @@ class GameScene extends Phaser.Scene {
     this.dragging = null;
     this.feedbackLock = false;
     drawFactory(this);
-    this.add.image(LAYOUT.header.x, LAYOUT.header.y, "instruction-sign-text")
-      .setDisplaySize(LAYOUT.header.width, LAYOUT.header.height);
+    const instructionSign = this.add.image(WIDTH / 2, LAYOUT.header.y, "instruction-sign-text", "trimmed");
+    const instructionWidth = IS_MOBILE_PORTRAIT ? 600 : 520;
+    instructionSign.setScale(instructionWidth / instructionSign.width);
 
     this.drawTimer();
     this.drawScore();
@@ -740,20 +744,25 @@ class ResultScene extends Phaser.Scene {
     glassLayer.postFX.addBlur(1, 2, 2, 0.8, 0xffffff, 2);
     this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0xf3f8ff, 0.11);
 
-    this.add.image(LAYOUT.header.x, LAYOUT.header.y, "instruction-sign-text")
-      .setDisplaySize(LAYOUT.header.width, LAYOUT.header.height);
-    const resultPanelY = IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.38) : 341;
-    this.add.image(WIDTH / 2, resultPanelY, "result-panel-empty")
-      .setDisplaySize(IS_MOBILE_PORTRAIT ? 650 : 615, IS_MOBILE_PORTRAIT ? 341 : 323);
-    makeText(this, WIDTH / 2, IS_MOBILE_PORTRAIT ? resultPanelY - 85 : 261, `النَّتِيجَةُ: ${this.toArabic(this.finalScore)} / ٢٠`, IS_MOBILE_PORTRAIT ? 36 : 33, {
+    const resultPanelY = IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.36) - 25 : 305;
+    this.add.image(WIDTH / 2, resultPanelY, "result-panel-empty", "trimmed")
+      .setDisplaySize(IS_MOBILE_PORTRAIT ? 620 : 520, IS_MOBILE_PORTRAIT ? 543 : 455);
+    makeText(
+      this,
+      WIDTH / 2 - (IS_MOBILE_PORTRAIT ? 137 : 111),
+      resultPanelY - (IS_MOBILE_PORTRAIT ? 46 : 40),
+      `${this.toArabic(this.finalScore)} / ٢٠`,
+      IS_MOBILE_PORTRAIT ? 48 : 43,
+      {
       color: "#17205c",
       kufi: true,
-    });
+      },
+    );
 
     const stars = this.getStars(this.finalScore);
     const starImage = this.add.image(
       WIDTH / 2,
-      IS_MOBILE_PORTRAIT ? resultPanelY - 10 : 330,
+      resultPanelY + (IS_MOBILE_PORTRAIT ? 80 : 70),
       `result-stars-${stars}`,
     ).setDisplaySize(IS_MOBILE_PORTRAIT ? 360 : 293, IS_MOBILE_PORTRAIT ? 76 : 62);
     const starScaleX = starImage.scaleX;
@@ -761,7 +770,7 @@ class ResultScene extends Phaser.Scene {
     starImage.setScale(0);
     this.tweens.add({ targets: starImage, scaleX: starScaleX, scaleY: starScaleY, duration: 520, delay: 180, ease: "Back.easeOut" });
 
-    const messageY = IS_MOBILE_PORTRAIT ? resultPanelY + 85 : 411;
+    const messageY = resultPanelY + (IS_MOBILE_PORTRAIT ? 180 : 155);
     const resultMessage = this.add.image(WIDTH / 2, messageY, this.getResultTexture(this.finalScore))
       .setDisplaySize(IS_MOBILE_PORTRAIT ? 330 : 255, IS_MOBILE_PORTRAIT ? 84 : 65);
     resultMessage.setAlpha(0).setY(messageY - 20);
@@ -770,21 +779,21 @@ class ResultScene extends Phaser.Scene {
     if (IS_MOBILE_PORTRAIT) {
       this.createDomResultButton(
         190,
-        resultPanelY + 239,
+        resultPanelY + 375,
         "button-replay.png",
         "Main semula",
         () => this.scene.start("game"),
       );
       this.createDomResultButton(
         530,
-        resultPanelY + 239,
+        resultPanelY + 375,
         "button-menu.png",
         "Kembali ke menu utama",
         () => this.scene.start("cover"),
       );
     } else {
-      this.createImageButton(510, 552, "button-menu", () => this.scene.start("cover"));
-      this.createImageButton(770, 552, "button-replay", () => this.scene.start("game"));
+      this.createImageButton(510, 590, "button-menu", () => this.scene.start("cover"));
+      this.createImageButton(770, 590, "button-replay", () => this.scene.start("game"));
     }
     attachCustomPointer(this);
     this.cameras.main.fadeIn(300, 17, 36, 61);
