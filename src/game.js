@@ -65,87 +65,41 @@ const WORDS = [
 
 class SoundKit {
   constructor() {
-    this.context = null;
-    this.musicTimer = null;
-    this.musicStep = 0;
+    this.soundEnabled = true;
+    this.musicEnabled = true;
+    this.music = new Audio("/assets/audio/music-background.mp3");
+    this.music.preload = "auto";
+    this.music.loop = true;
+    this.music.volume = 0.16;
+    this.effects = Object.fromEntries(["click", "correct", "wrong", "complete"].map((name) => {
+      const audio = new Audio(`/assets/audio/sfx-${name}.mp3`);
+      audio.preload = "auto";
+      return [name, audio];
+    }));
   }
 
-  ensure() {
-    if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
-    if (this.context.state === "suspended") this.context.resume();
+  playEffect(name, volume = 0.72) {
+    if (!this.soundEnabled || !this.effects[name]) return;
+    const audio = this.effects[name].cloneNode(true);
+    audio.volume = volume;
+    audio.play().catch(() => {});
   }
 
-  tone(frequency, duration = 0.12, type = "sine", volume = 0.08, delay = 0) {
-    this.ensure();
-    const at = this.context.currentTime + delay;
-    const osc = this.context.createOscillator();
-    const gain = this.context.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(frequency, at);
-    gain.gain.setValueAtTime(volume, at);
-    gain.gain.exponentialRampToValueAtTime(0.001, at + duration);
-    osc.connect(gain).connect(this.context.destination);
-    osc.start(at);
-    osc.stop(at + duration);
-  }
-
-  start() {
-    [392, 523, 659].forEach((note, i) => this.tone(note, 0.28, "triangle", 0.08, i * 0.08));
-  }
-
-  correct() {
-    this.tone(660, 0.1, "sine", 0.1);
-    this.tone(880, 0.18, "sine", 0.08, 0.08);
-  }
-
-  wrong() {
-    this.tone(145, 0.22, "sawtooth", 0.045);
-  }
-
-  success() {
-    this.ensure();
-    const notes = [523, 659, 784, 1047];
-    notes.forEach((frequency, index) => {
-      const at = this.context.currentTime + index * 0.14;
-      const duration = index === notes.length - 1 ? 0.48 : 0.25;
-      const oscillator = this.context.createOscillator();
-      const harmonic = this.context.createOscillator();
-      const filter = this.context.createBiquadFilter();
-      const gain = this.context.createGain();
-      oscillator.type = "sawtooth";
-      harmonic.type = "square";
-      oscillator.frequency.setValueAtTime(frequency, at);
-      harmonic.frequency.setValueAtTime(frequency * 2, at);
-      harmonic.detune.setValueAtTime(7, at);
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1800, at);
-      filter.frequency.exponentialRampToValueAtTime(950, at + duration);
-      filter.Q.setValueAtTime(2.4, at);
-      gain.gain.setValueAtTime(0.001, at);
-      gain.gain.exponentialRampToValueAtTime(0.065, at + 0.025);
-      gain.gain.exponentialRampToValueAtTime(0.04, at + duration * 0.65);
-      gain.gain.exponentialRampToValueAtTime(0.001, at + duration);
-      oscillator.connect(filter);
-      harmonic.connect(filter);
-      filter.connect(gain).connect(this.context.destination);
-      oscillator.start(at);
-      harmonic.start(at);
-      oscillator.stop(at + duration);
-      harmonic.stop(at + duration);
-    });
-  }
+  start() { this.playEffect("click"); this.beginMusic(); }
+  correct() { this.playEffect("correct"); }
+  wrong() { this.playEffect("wrong"); }
+  success() { this.playEffect("complete"); }
 
   beginMusic() {
-    this.stopMusic();
-    const notes = [262, 330, 392, 330, 294, 349, 440, 349];
-    this.musicTimer = window.setInterval(() => {
-      this.tone(notes[this.musicStep++ % notes.length], 0.14, "triangle", 0.018);
-    }, 360);
+    if (!this.musicEnabled || !this.music.paused) return;
+    this.music.play().catch(() => {});
   }
 
-  stopMusic() {
-    if (this.musicTimer) window.clearInterval(this.musicTimer);
-    this.musicTimer = null;
+  stopMusic() { this.music.pause(); }
+  setSoundEnabled(enabled) { this.soundEnabled = Boolean(enabled); }
+  setMusicEnabled(enabled) {
+    this.musicEnabled = Boolean(enabled);
+    if (this.musicEnabled) this.beginMusic(); else this.stopMusic();
   }
 }
 
@@ -452,6 +406,7 @@ class CoverScene extends Phaser.Scene {
       ease: "Sine.easeOut",
     }));
     startButton.on("pointerdown", () => {
+      sounds.start();
       if (IS_MOBILE_PORTRAIT && document.fullscreenEnabled && !document.fullscreenElement) {
         document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
       }
@@ -463,7 +418,6 @@ class CoverScene extends Phaser.Scene {
         duration: 80,
         ease: "Quad.easeInOut",
         onComplete: () => {
-          sounds.start();
           this.cameras.main.fadeOut(280, 17, 36, 61);
           this.time.delayedCall(280, () => this.scene.start("game"));
         },
@@ -829,6 +783,8 @@ class ResultScene extends Phaser.Scene {
       event.preventDefault();
       event.stopPropagation();
       button.disabled = true;
+      sounds.playEffect("click");
+      if (imageName === "button-replay.png") sounds.beginMusic();
       onClick();
     };
 
@@ -868,6 +824,8 @@ class ResultScene extends Phaser.Scene {
       ease: "Sine.easeOut",
     }));
     button.on("pointerdown", () => {
+      sounds.playEffect("click");
+      if (texture === "button-replay") sounds.beginMusic();
       this.tweens.killTweensOf(button);
       this.tweens.add({
         targets: button,

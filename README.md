@@ -16,7 +16,7 @@ Open the local URL printed by Vite. Drag each moving ball into the correct bin b
 - Cover, activity, correct/incorrect feedback, and results screens
 - All 20 storyboard words and their specified categories
 - Moving conveyor, drag-and-drop bins, 45-second countdown, and score out of 20
-- Ding/buzz/start/success sounds generated with Web Audio
+- ElevenLabs-generated background music and click/correct/wrong/completion sounds
 - Star scale and Arabic feedback following the storyboard ranges (with one star as the zero-score fallback)
 - Replay and return-to-main-menu actions
 - Responsive 16:9 canvas with mouse and touch input
