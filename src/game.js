@@ -334,7 +334,7 @@ class LoadingScene extends Phaser.Scene {
     this.textures.get("cover-title").add("trimmed", 0, 127, 136, 939, 659);
     this.textures.get("cover-start").add("trimmed", 0, 175, 153, 1571, 382);
     this.textures.get("instruction-sign-text").add("trimmed", 0, 69, 285, 1784, 437);
-    this.textures.get("result-panel-empty").add("trimmed", 0, 448, 0, 938, 821);
+    this.textures.get("result-panel-empty").add("trimmed", 0, 448, 0, 938, 1154);
     const openCover = () => this.scene.start("cover");
     if (document.fonts?.ready) {
       document.fonts.ready.then(openCover, openCover);
@@ -378,7 +378,7 @@ class CoverScene extends Phaser.Scene {
       "cover-title",
       "trimmed",
     );
-    const coverTitleWidth = IS_MOBILE_PORTRAIT ? 465 : 390;
+    const coverTitleWidth = IS_MOBILE_PORTRAIT ? 510 : 430;
     coverTitle.setScale(coverTitleWidth / coverTitle.width);
     const startButton = this.add.image(
       WIDTH / 2,
@@ -386,7 +386,7 @@ class CoverScene extends Phaser.Scene {
       "cover-start",
       "trimmed",
     );
-    const startButtonWidth = IS_MOBILE_PORTRAIT ? 300 : 258;
+    const startButtonWidth = IS_MOBILE_PORTRAIT ? 330 : 285;
     startButton.setScale(startButtonWidth / startButton.width)
       .setInteractive({ pixelPerfect: true, alphaTolerance: 16 });
     const buttonScaleX = startButton.scaleX;
@@ -699,8 +699,11 @@ class ResultScene extends Phaser.Scene {
     this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0xf3f8ff, 0.11);
 
     const resultPanelY = IS_MOBILE_PORTRAIT ? Math.round(HEIGHT * 0.36) - 25 : 305;
-    this.add.image(WIDTH / 2, resultPanelY, "result-panel-empty", "trimmed")
-      .setDisplaySize(IS_MOBILE_PORTRAIT ? 620 : 520, IS_MOBILE_PORTRAIT ? 543 : 455);
+    const resultPanelWidth = IS_MOBILE_PORTRAIT ? 620 : 520;
+    const resultPanelScale = resultPanelWidth / 938;
+    const ropeExtension = 333 * resultPanelScale;
+    this.add.image(WIDTH / 2, resultPanelY - ropeExtension / 2, "result-panel-empty", "trimmed")
+      .setDisplaySize(resultPanelWidth, 1154 * resultPanelScale);
     makeText(
       this,
       WIDTH / 2 - (IS_MOBILE_PORTRAIT ? 137 : 111),
